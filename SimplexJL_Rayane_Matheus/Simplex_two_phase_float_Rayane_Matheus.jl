@@ -24,9 +24,9 @@ function initial_BFS(A, b, b_idx, art_idx)
     m, n = size(A)
 
     B = A[:, b_idx]
-    x_B = inv(B) * b
+    x_B = b
 
-    Y = inv(B) * A
+    Y = A
     obj = 0
   
     # z_c is a row vector
@@ -42,11 +42,10 @@ function initial_BFS(A, b, b_idx, art_idx)
         pivoting!(st)
         print_tableau(st)
     end
-    if st.obj < 0
-        error("Infeasible")
+    if st.obj != 0
+        return st, -1
     end
-    return st 
-    
+    return st, 0
 end
 
 function adjust_initial_tableau(st::SimplexTableau, art_idx)
@@ -152,20 +151,31 @@ function initialize(c, A, b, b_idx, art_idx)
   
     # Finding an initial BFS
     println("====================== FIRST PHASE ======================")
-    st = initial_BFS(A,b, b_idx, art_idx)
+    st, feas = initial_BFS(A,b, b_idx, art_idx)
+
+    if feas == -1
+        return st , -1
+    end
     
     println("====================== SECOND PHASE ======================")
     rm_idx = findall(st.z_c[:] .== 1.0)
     st.z_c = st.z_c[:,setdiff(1:end, rm_idx)]
-    st.Y = st.Y[setdiff(1:end, rm_idx), setdiff(1:end, rm_idx)]
+    st.Y = st.Y[:, setdiff(1:end, rm_idx)]
 
     for i in 1: length(st.z_c)
         st.z_c[i] = -c[i]
     end
     
     print_tableau(st)
+    n_mod = 0
+    for el in sortperm(st.b_idx, rev=true)
+        if st.b_idx[el] > size(st.Y,2)
+            st.b_idx[el] = size(st.Y,2) - n_mod
+            n_mod +=1
+        end
+    end
     adjust_initial_tableau(st,st.b_idx)
-    return st
+    return st, 0
 end
 
 function is_optimal(t::SimplexTableau)
@@ -203,18 +213,23 @@ function simplex(A::Matrix{Float64}, b::Vector{Float64}, c::Vector{Float64}, s::
         end
     end
     
-    if length(art_idx) == length(c)
+    if length(art_idx) == size(A,1)
         b_idx = art_idx
-    elseif length(art_idx) < length(c)
-        diff = length(c) - length(art_idx)
-        b_idx = vcat(art_idx,slk_idx[1:diff])
+    elseif length(art_idx) < size(A,1)
+        diff = size(A,1) - length(art_idx)
+        b_idx = vcat(art_idx, slk_idx[1:diff])
     end
     
     c = [c;zeros(size(A,1))]
     
     # SIMPLEX!
 
-    tableau = initialize(c, A, b, b_idx, art_idx)
+    tableau, feas = initialize(c, A, b, b_idx, art_idx)
+    if feas == -1
+        println("INFEASIBLE SOLUTION")
+        return nothing, nothing
+    end
+
     print_tableau(tableau)
     while !is_optimal(tableau)
         pivoting!(tableau)
@@ -237,21 +252,31 @@ function simplex(A::Matrix{Float64}, b::Vector{Float64}, c::Vector{Float64}, s::
 end
 
 # Problema do slide do Simplex Duas Fases
-A = [
-    1.0  1.0 1.0
-    1.0 -1.0 0.0
-    2.0  3.0 1.0
-]
-b = [ 10.0, 1.0, 20.0 ]
-c = [ 4.0, 5.0, -3.0 ]
-s = [ "=", "≥", "≤" ]
-
 # A = [
-#     0.0 1.0
-#     2.0 3.0
+#     1.0  1.0 1.0
+#     1.0 -1.0 0.0
+#     2.0  3.0 1.0
 # ]
-# b = [1.0, 3.0]
-# c = [4.0, 2.0]
-# s = ["=", "≥"]
+# b = [ 10.0, 1.0, 20.0 ]
+# c = [ 4.0, 5.0, -3.0 ]
+# s = [ "=", "≥", "≤" ]
+
+## INVIÁVEL
+# A = [
+#     2.0 1.0
+#     7.0 3.0
+# ]
+# b = [8.0, 4.0]
+# c = [4.0, 12.0]
+# s = ["=", "≤"]
+
+A = [
+    0.0 1.0
+    2.0 3.0
+    1.0 1.0
+]
+b = [4.0, 24.0, 16.0]
+c = [5.0, 3.0]
+s = ["=", "≥", "≤"]
 
 simplex(A, b, c, s)
