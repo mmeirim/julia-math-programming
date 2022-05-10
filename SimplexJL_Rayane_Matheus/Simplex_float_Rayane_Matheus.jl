@@ -49,8 +49,6 @@ function pivoting!(t::SimplexTableau)
     m, n = size(t.Y)
 
     entering, exiting = pivot_point(t)
-    println(entering)
-    println(exiting)
     println("Pivoting: entering = x_$entering, exiting = x_$(t.b_idx[exiting])")
 
     # Pivoting: exiting-row, entering-column
@@ -162,20 +160,20 @@ end
 # b = [ 4.0, 4.0 ]
 # c = [ 4.0, 3.0 ]
 
-# A = [
-#     2.0 2.0
-#     1.0 3.0
-# ]
-# b = [ 6.0, 9.0]
-# c = [ 3.0, 1.0]
-
 A = [
-    0.0 1.0
-    1.0 1.0
-    1.0 0.0
-    5.0 1.0
+    2.0 2.0
+    1.0 3.0
 ]
-b = [ 4.0, 6.0, 3.0, 18.0 ]
-c = [ 1.0, 3.0]
+b = [ 6.0, 9.0]
+c = [ 3.0, 1.0]
+
+# A = [
+#     0.0 1.0
+#     1.0 1.0
+#     1.0 0.0
+#     5.0 1.0
+# ]
+# b = [ 4.0, 6.0, 3.0, 18.0 ]
+# c = [ 1.0, 3.0]
 
 simplex(A, b, c)
