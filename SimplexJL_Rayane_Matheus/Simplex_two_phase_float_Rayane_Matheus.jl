@@ -36,7 +36,7 @@ function initial_BFS(A, b, b_idx, art_idx)
   
     st = SimplexTableau(z_c, Y, x_B, obj, b_idx)   
     print_tableau(st)
-    st = adjust_initial_tableau(st, art_idx)
+    st = adjust_initial_tableau(st, art_idx, st.b_idx)
 
     while !is_optimal(st)
         pivoting!(st)
@@ -48,9 +48,11 @@ function initial_BFS(A, b, b_idx, art_idx)
     return st, 0
 end
 
-function adjust_initial_tableau(st::SimplexTableau, art_idx)
+function adjust_initial_tableau(st::SimplexTableau, art_idx, b_idx)
     mm, nn = size(st.Y)
-    for (aa,gg) in enumerate(art_idx)
+    pos = findall(x -> in(x, art_idx), b_idx)
+    for (i,gg) in enumerate(art_idx)
+        aa = pos[i]
         coef = st.Y[aa,gg]
         st.Y[aa, :] /= coef
         st.x_B[aa] /= coef 
@@ -174,7 +176,7 @@ function initialize(c, A, b, b_idx, art_idx)
             n_mod +=1
         end
     end
-    adjust_initial_tableau(st,st.b_idx)
+    adjust_initial_tableau(st,st.b_idx,st.b_idx)
     return st, 0
 end
 
@@ -217,7 +219,7 @@ function simplex(A::Matrix{Float64}, b::Vector{Float64}, c::Vector{Float64}, s::
         b_idx = art_idx
     elseif length(art_idx) < size(A,1)
         diff = size(A,1) - length(art_idx)
-        b_idx = vcat(art_idx, slk_idx[1:diff])
+        b_idx = sort(vcat(art_idx, slk_idx[1:diff]))
     end
     
     c = [c;zeros(size(A,1))]
@@ -252,14 +254,14 @@ function simplex(A::Matrix{Float64}, b::Vector{Float64}, c::Vector{Float64}, s::
 end
 
 # Problema do slide do Simplex Duas Fases
-# A = [
-#     1.0  1.0 1.0
-#     1.0 -1.0 0.0
-#     2.0  3.0 1.0
-# ]
-# b = [ 10.0, 1.0, 20.0 ]
-# c = [ 4.0, 5.0, -3.0 ]
-# s = [ "=", "≥", "≤" ]
+A = [
+    1.0  1.0 1.0
+    1.0 -1.0 0.0
+    2.0  3.0 1.0
+]
+b = [ 10.0, 1.0, 20.0 ]
+c = [ 4.0, 5.0, -3.0 ]
+s = [ "=", "≥", "≤" ]
 
 ## INVIÁVEL
 # A = [
@@ -270,13 +272,21 @@ end
 # c = [4.0, 12.0]
 # s = ["=", "≤"]
 
-A = [
-    0.0 1.0
-    2.0 3.0
-    1.0 1.0
-]
-b = [4.0, 24.0, 16.0]
-c = [5.0, 3.0]
-s = ["=", "≥", "≤"]
+# A = [
+#     1.0 1.0
+#     0.0 1.0
+#     2.0 3.0
+# ]
+# b = [16.0, 4.0, 24.0]
+# c = [5.0, 3.0]
+# s = ["≤", "=", "≥"]
+
+# A = [
+#     2.0 2.0
+#     1.0 3.0
+# ]
+# b = [ 6.0, 9.0]
+# c = [ 3.0, 1.0]
+# s = ["≤", "≤"]
 
 simplex(A, b, c, s)
